@@ -1,0 +1,37 @@
+{
+  "name": "petgpt-plugin-bing-chat",
+  "version": "0.0.1",
+  "description": "plugin bing-chat for petgpt",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist/",
+    "src/",
+    "LICENSE",
+    "tsconfig.json",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petgpt/petgpt-plugin-bing-chat"
+  },
+  "homepage": "https://github.com/petgpt/petgpt-plugin-bing-chat",
+  "scripts": {
+    "build": "tsc",
+    "pub": "yarn build && yarn publish"
+  },
+  "keywords": [
+    "petgpt",
+    "petgpt-plugin"
+  ],
+  "author": "AHGGG",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "bing-chat": "^0.2.3"
+  }
+}
