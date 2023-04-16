@@ -106,6 +106,12 @@ function bindEventListener(ctx: PetExpose) {
         }
         initChatParam(ctx)
     })
+
+    // 监听clear事件
+    ctx.emitter.on(`plugin.${pluginName}.func.clear`, () => {
+        context = {}
+        log(`clear`)
+    })
 }
 export default (ctx: PetExpose): IPetPluginInterface => {
     const register = () => {
