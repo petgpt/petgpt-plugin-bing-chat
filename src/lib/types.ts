@@ -2,9 +2,6 @@
  * 定义插件有哪些功能
  */
 export interface IPetPluginInterface {
-    name: string
-    version: string
-    description: string
     register: () => void
     unregister: () => void
     config?: (ctx: PetExpose) => IPluginConfig[]
@@ -35,6 +32,7 @@ export interface IEventBus {
     once(event: string | symbol, listener: Function): void
     listeners(event: string | symbol): Function[]
     removeAllListeners(event?: string | symbol): void
+    listenerCount(event: string | symbol): number
 }
 
 /**
