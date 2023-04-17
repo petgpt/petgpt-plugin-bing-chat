@@ -1,6 +1,6 @@
 {
   "name": "petgpt-plugin-bing-chat",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "plugin bing-chat for petgpt",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
