@@ -1,5 +1,5 @@
 import { PetExpose, IPetPluginInterface, PluginData } from './lib/types.js'
-import { log } from './lib/helper.js'
+import {Log} from './lib/helper.js'
 import { BingChat } from 'bing-chat'
 
 const pluginName = 'bing-chat'
@@ -17,7 +17,7 @@ let context: ChatContext = {
 let bakContext: ChatContext = {}
 function updateDB(ctx: PetExpose, data: any) {
     Object.keys(data).forEach((key) => {
-        log(`set: key: `, key, ` to value: `, data[key])
+        log.debug(`set: key: `, key, ` to value: `, data[key])
         ctx.db.set(key, data[key])
     })
 }
@@ -42,7 +42,7 @@ function initAPI(ctx: PetExpose) {
         api = new BingChat({
             cookie: ctx.db.get('BING_COOKIE')
         });
-        log(`init bing api:`, api)
+        log.debug(`init bing api:`, api)
     }
 }
 
@@ -52,13 +52,13 @@ function bindEventListener(ctx: PetExpose) {
             updateDB(ctx, data)
             initChatParam(ctx)
             initAPI(ctx)
-            log(`[event] [plugin.${pluginName}.config.update] receive data:`, data)
+            log.debug(`[event] [plugin.${pluginName}.config.update] receive data:`, data)
         })
     }
 
     if(!ctx.emitter.listenerCount(`plugin.${pluginName}.data`)) {
         ctx.emitter.on(`plugin.${pluginName}.data`, async (data: PluginData) => {
-            log(`bing context: `, context)
+            log.debug(`bing context: `, context)
             const res = await api.sendMessage(data.data, {
                 onProgress: (partialResponse) => {
                     ctx.emitter.emit('upsertLatestText', {
@@ -66,7 +66,7 @@ function bindEventListener(ctx: PetExpose) {
                         type: 'system',
                         text: partialResponse.text
                     })
-                    // console.log(`partialResponse: `, partialResponse)
+                    // log.debug(`partialResponse: `, partialResponse)
                 },
                 clientId: context.clientId,
                 conversationId: context.conversationId,
@@ -78,31 +78,31 @@ function bindEventListener(ctx: PetExpose) {
             if (enableChatContextBing) {
                 context = bakContext
             }
-            log(`bing res:`, res);
+            log.debug(`bing res:`, res);
         });
     }
 
     if(!ctx.emitter.listenerCount(`plugin.${pluginName}.slot.push`)) {
         ctx.emitter.on(`plugin.${pluginName}.slot.push`, (newSlotData: any) => {
             let slotDataList:[] = JSON.parse(newSlotData)
-            log(`receive newSlotData(type: ${typeof slotDataList})(len: ${slotDataList.length}):`, slotDataList)
+            log.debug(`receive newSlotData(type: ${typeof slotDataList})(len: ${slotDataList.length}):`, slotDataList)
             for (let i = 0; i < slotDataList.length; i++) {
                 let slotData: any = slotDataList[i]
                 switch (slotData.type) {
                     case 'switch': {
-                        log(`${i}, switch value:`, slotData.value)
+                        log.debug(`${i}, switch value:`, slotData.value)
                         ctx.db.set('enableChatContextBing', slotData.value)
                         break;
                     }
                     case 'dialog': {
                         // slotData.value.forEach((diaItem: any) => {
-                        //     log(`${i}, dialog item:`, diaItem)
+                        //     log.debug(`${i}, dialog item:`, diaItem)
                         //     ctx.db.set(diaItem.name, diaItem.value)
                         // })
                         break;
                     }
                     case 'select': {
-                        // log(`${i}, select value:`, slotData.value)
+                        // log.debug(`${i}, select value:`, slotData.value)
                         // ctx.db.set('selectTest', slotData.value)
                         break;
                     }
@@ -119,15 +119,17 @@ function bindEventListener(ctx: PetExpose) {
         // 监听clear事件
         ctx.emitter.on(`plugin.${pluginName}.func.clear`, () => {
             context = {}
-            log(`clear`)
+            log.debug(`clear`)
         })
     }
 }
+let log: Log;
 export default (ctx: PetExpose): IPetPluginInterface => {
     const register = () => {
+        log = new Log(ctx)
         initAPI(ctx)
         bindEventListener(ctx)
-        log(`[register] ctx: ${JSON.stringify(ctx)}`)
+        log.debug(`[register]`)
     }
 
     const unregister = () => {
@@ -135,7 +137,7 @@ export default (ctx: PetExpose): IPetPluginInterface => {
         ctx.emitter.removeAllListeners(`plugin.${pluginName}.data`)
         ctx.emitter.removeAllListeners(`plugin.${pluginName}.slot.push`)
         ctx.emitter.removeAllListeners(`plugin.${pluginName}.func.clear`)
-        log(`[unregister]`)
+        log.debug(`[unregister]`)
     }
     return {
         register,
@@ -161,7 +163,7 @@ export default (ctx: PetExpose): IPetPluginInterface => {
             ctx.emitter.emit(`plugin.${pluginName}.data`, data) // 转发给自己的listener
         }),
         stop: () => new Promise((resolve, _) => {
-            log('[stop]')
+            log.debug('[stop]')
             resolve()
         }),
     }
