@@ -47,71 +47,81 @@ function initAPI(ctx: PetExpose) {
 }
 
 function bindEventListener(ctx: PetExpose) {
-    ctx.emitter.on(`plugin.${pluginName}.config.update`, (data: any) => {
-        updateDB(ctx, data)
-        initChatParam(ctx)
-        initAPI(ctx)
-        log(`[event] [plugin.${pluginName}.config.update] receive data:`, data)
-    })
-    ctx.emitter.on(`plugin.${pluginName}.data`, async (data: PluginData) => {
-        log(`bing context: `, context)
-        const res = await api.sendMessage(data.data, {
-            onProgress: (partialResponse) => {
-                ctx.emitter.emit('upsertLatestText', {
-                    id: partialResponse.id,
-                    type: 'system',
-                    text: partialResponse.text
-                })
-                // console.log(`partialResponse: `, partialResponse)
-            },
-            clientId: context.clientId,
-            conversationId: context.conversationId,
-            conversationSignature: context.conversationSignature
+    if(!ctx.emitter.listenerCount(`plugin.${pluginName}.config.update`)) {
+        ctx.emitter.on(`plugin.${pluginName}.config.update`, (data: any) => {
+            updateDB(ctx, data)
+            initChatParam(ctx)
+            initAPI(ctx)
+            log(`[event] [plugin.${pluginName}.config.update] receive data:`, data)
         })
-        bakContext.clientId = res.clientId
-        bakContext.conversationId = res.conversationId
-        bakContext.conversationSignature = res.conversationSignature
-        if (enableChatContextBing) {
-            context = bakContext
-        }
-        log(`bing res:`, res);
-    });
-    ctx.emitter.on(`plugin.${pluginName}.slot.push`, (newSlotData: any) => {
-        let slotDataList:[] = JSON.parse(newSlotData)
-        log(`receive newSlotData(type: ${typeof slotDataList})(len: ${slotDataList.length}):`, slotDataList)
-        for (let i = 0; i < slotDataList.length; i++) {
-            let slotData: any = slotDataList[i]
-            switch (slotData.type) {
-                case 'switch': {
-                    log(`${i}, switch value:`, slotData.value)
-                    ctx.db.set('enableChatContextBing', slotData.value)
-                    break;
-                }
-                case 'dialog': {
-                    // slotData.value.forEach((diaItem: any) => {
-                    //     log(`${i}, dialog item:`, diaItem)
-                    //     ctx.db.set(diaItem.name, diaItem.value)
-                    // })
-                    break;
-                }
-                case 'select': {
-                    // log(`${i}, select value:`, slotData.value)
-                    // ctx.db.set('selectTest', slotData.value)
-                    break;
-                }
-                case 'uploda': {break;}
-                default: {break;}
+    }
+
+    if(!ctx.emitter.listenerCount(`plugin.${pluginName}.data`)) {
+        ctx.emitter.on(`plugin.${pluginName}.data`, async (data: PluginData) => {
+            log(`bing context: `, context)
+            const res = await api.sendMessage(data.data, {
+                onProgress: (partialResponse) => {
+                    ctx.emitter.emit('upsertLatestText', {
+                        id: partialResponse.id,
+                        type: 'system',
+                        text: partialResponse.text
+                    })
+                    // console.log(`partialResponse: `, partialResponse)
+                },
+                clientId: context.clientId,
+                conversationId: context.conversationId,
+                conversationSignature: context.conversationSignature
+            })
+            bakContext.clientId = res.clientId
+            bakContext.conversationId = res.conversationId
+            bakContext.conversationSignature = res.conversationSignature
+            if (enableChatContextBing) {
+                context = bakContext
             }
+            log(`bing res:`, res);
+        });
+    }
 
-        }
-        initChatParam(ctx)
-    })
+    if(!ctx.emitter.listenerCount(`plugin.${pluginName}.slot.push`)) {
+        ctx.emitter.on(`plugin.${pluginName}.slot.push`, (newSlotData: any) => {
+            let slotDataList:[] = JSON.parse(newSlotData)
+            log(`receive newSlotData(type: ${typeof slotDataList})(len: ${slotDataList.length}):`, slotDataList)
+            for (let i = 0; i < slotDataList.length; i++) {
+                let slotData: any = slotDataList[i]
+                switch (slotData.type) {
+                    case 'switch': {
+                        log(`${i}, switch value:`, slotData.value)
+                        ctx.db.set('enableChatContextBing', slotData.value)
+                        break;
+                    }
+                    case 'dialog': {
+                        // slotData.value.forEach((diaItem: any) => {
+                        //     log(`${i}, dialog item:`, diaItem)
+                        //     ctx.db.set(diaItem.name, diaItem.value)
+                        // })
+                        break;
+                    }
+                    case 'select': {
+                        // log(`${i}, select value:`, slotData.value)
+                        // ctx.db.set('selectTest', slotData.value)
+                        break;
+                    }
+                    case 'uploda': {break;}
+                    default: {break;}
+                }
 
-    // 监听clear事件
-    ctx.emitter.on(`plugin.${pluginName}.func.clear`, () => {
-        context = {}
-        log(`clear`)
-    })
+            }
+            initChatParam(ctx)
+        })
+    }
+
+    if(!ctx.emitter.listenerCount(`plugin.${pluginName}.func.clear`)) {
+        // 监听clear事件
+        ctx.emitter.on(`plugin.${pluginName}.func.clear`, () => {
+            context = {}
+            log(`clear`)
+        })
+    }
 }
 export default (ctx: PetExpose): IPetPluginInterface => {
     const register = () => {
@@ -121,14 +131,13 @@ export default (ctx: PetExpose): IPetPluginInterface => {
     }
 
     const unregister = () => {
-        ctx.emitter.removeAllListeners(`plugin.${pluginName}.data`)
         ctx.emitter.removeAllListeners(`plugin.${pluginName}.config.update`)
+        ctx.emitter.removeAllListeners(`plugin.${pluginName}.data`)
+        ctx.emitter.removeAllListeners(`plugin.${pluginName}.slot.push`)
+        ctx.emitter.removeAllListeners(`plugin.${pluginName}.func.clear`)
         log(`[unregister]`)
     }
     return {
-        name: 'petgpt-plugin-bing-chat',
-        version: '0.0.1',
-        description: 'petgpt plugin for bing-chat',
         register,
         unregister,
         config: () => [{
@@ -148,9 +157,8 @@ export default (ctx: PetExpose): IPetPluginInterface => {
                 description: "是否开启上下文"
             }
         ],
-        handle: (data: PluginData) => new Promise((resolve, _) => {
+        handle: (data: PluginData) => new Promise(() => {
             ctx.emitter.emit(`plugin.${pluginName}.data`, data) // 转发给自己的listener
-            resolve()
         }),
         stop: () => new Promise((resolve, _) => {
             log('[stop]')
