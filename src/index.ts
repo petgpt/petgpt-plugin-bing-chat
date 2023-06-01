@@ -127,9 +127,12 @@ let log: Log;
 export default (ctx: PetExpose): IPetPluginInterface => {
     const register = () => {
         log = new Log(ctx)
-        initAPI(ctx)
         bindEventListener(ctx)
         log.debug(`[register]`)
+    }
+    const init = () => {
+        initAPI(ctx)
+        log.debug(`[init]`)
     }
 
     const unregister = () => {
@@ -142,6 +145,7 @@ export default (ctx: PetExpose): IPetPluginInterface => {
     return {
         register,
         unregister,
+        init,
         config: () => [{
             name: 'BING_COOKIE',
             type: 'input',
